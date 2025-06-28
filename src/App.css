@@ -40,3 +40,42 @@
 .read-the-docs {
   color: #888;
 }
+
+/* ----------------------------------------------------- */
+
+.controls {
+  padding: 1rem;
+  background: #000000;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.control-group {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.stats {
+  background: #000000;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 10px 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
