@@ -1,24 +1,28 @@
 export default function ControlsPanel({
-  params,
-  onParamsChange,
-  onReset,
-  showVision,
-  setShowVision,
-  stats
+  params,         // Текущие параметры симуляции
+  onParamsChange, // Функция изменения параметров
+  onReset,        // Функция сброса симуляции
+  showVision,     // Флаг показа радиусов зрения
+  setShowVision,  // Функция изменения флага радиусов
+  stats           // Статистика симуляции
 }) {
   return (
     <div className="controls">
+      {/* Блок статистики */}
       <div className="stats">
         <h3>Статистика</h3>
         <p>Хищников: <span>{stats.predators}</span></p>
         <p>Жертв: <span>{stats.prey}</span></p>
-        <p>Травы: <span>{stats.food}/{params.foodCount}</span></p>
         <p>Ядовитых жертв: <span>{stats.poisoned}</span></p>
+        <p>Травы: <span>{stats.food}/{params.foodCount}</span></p>
       </div>
 
+      {/* Блок управления */}
       <div className="control-group">
         <h3>Управление</h3>
+        {/* Кнопка сброса */}
         <button onClick={onReset}>Сбросить</button>
+        {/* Переключатель показа радиусов */}
         <label className="toggle-vision">
           <input
             type="checkbox"
@@ -29,8 +33,10 @@ export default function ControlsPanel({
         </label>
       </div>
 
+      {/* Блок параметров хищников */}
       <div className="control-group">
         <h3>Хищники</h3>
+        {/* Количество хищников */}
         <label>
           Количество: {params.predatorCount}
           <input
@@ -41,6 +47,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, predatorCount: +e.target.value })}
           />
         </label>
+        {/* Скорости хищников */}
         <label>
           Скорость: {params.predatorSpeed.toFixed(1)}
           <input
@@ -52,6 +59,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, predatorSpeed: +e.target.value })}
           />
         </label>
+        {/* Радиус зрения хищников */}
         <label>
           Радиус зрения: {params.predatorVisionRadius}
           <input
@@ -62,6 +70,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, predatorVisionRadius: +e.target.value })}
           />
         </label>
+        {/* Порог размножения хищников */}
         <label>
           Для размножения: {params.predatorReproductionThreshold}
           <input
@@ -74,8 +83,10 @@ export default function ControlsPanel({
         </label>
       </div>
 
+      {/* Блок параметров жертв */}
       <div className="control-group">
         <h3>Жертвы</h3>
+        {/* Количество жертв */}
         <label>
           Количество: {params.preyCount}
           <input
@@ -86,6 +97,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, preyCount: +e.target.value })}
           />
         </label>
+        {/* Скорости жертв */}
         <label>
           Скорость: {params.preySpeed.toFixed(1)}
           <input
@@ -97,6 +109,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, preySpeed: +e.target.value })}
           />
         </label>
+        {/* Радиус зрения жертв */}
         <label>
           Радиус зрения: {params.preyVisionRadius}
           <input
@@ -107,6 +120,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, preyVisionRadius: +e.target.value })}
           />
         </label>
+        {/* Порог размножения жертв */}
         <label>
           Для размножения: {params.preyReproductionThreshold}
           <input
@@ -119,8 +133,10 @@ export default function ControlsPanel({
         </label>
       </div>
 
+      {/* Блок параметров окружения */}
       <div className="control-group">
         <h3>Окружение</h3>
+        {/* Количество травы */}
         <label>
           Трава: {params.foodCount}
           <input
@@ -131,6 +147,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, foodCount: +e.target.value })}
           />
         </label>
+        {/* Шанс ядовитой травы */}
         <label>
           Шанс яда: {(params.poisonChance * 100).toFixed(0)}%
           <input
@@ -141,6 +158,7 @@ export default function ControlsPanel({
             onChange={(e) => onParamsChange({ ...params, poisonChance: +e.target.value / 100 })}
           />
         </label>
+        {/* Время восстановления травы */}
         <label>
           Восстановление: {params.recoveryTimeSeconds} сек
           <input
