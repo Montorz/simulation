@@ -1,5 +1,5 @@
 export default class Prey {
-  constructor(x, y, speed, worldWidth, worldHeight, hungerThreshold) {
+  constructor(x, y, speed, worldWidth, worldHeight, reproductionThreshold, visionRadius) {
     this.x = x;
     this.y = y;
     this.speed = speed;
@@ -9,44 +9,64 @@ export default class Prey {
     this.targetDirection = this.direction;
     this.turnSpeed = 0.1;
     this.foodEaten = 0;
-    this.hungerThreshold = hungerThreshold;
+    this.reproductionThreshold = reproductionThreshold;
+    this.visionRadius = visionRadius;
     this.targetFood = null;
+    this.isAlive = true;
+    this.foodMemory = [];
   }
 
-  findClosestFood(foodList) {
-    let closestFood = null;
+  getVisibleFood(foodList) {
+    const visibleFood = foodList.filter(f => 
+      !f.isEaten && 
+      Math.sqrt((this.x - f.x) ** 2 + (this.y - f.y) ** 2) < this.visionRadius
+    );
+
+    this.foodMemory = visibleFood.slice(0, 3);
+    
+    if (visibleFood.length > 0) {
+      return visibleFood.reduce((closest, food) => {
+        const dist = Math.sqrt((this.x - food.x) ** 2 + (this.y - food.y) ** 2);
+        return dist < closest.distance ? { food, distance: dist } : closest;
+      }, { food: visibleFood[0], distance: Infinity }).food;
+    }
+    return null;
+  }
+
+  getVisiblePredators(predatorList) {
+    let closestPredator = null;
     let minDistance = Infinity;
 
-    foodList.forEach(food => {
-      if (food.isEaten) return;
-      const distance = Math.sqrt((this.x - food.x) ** 2 + (this.y - food.y) ** 2);
-      if (distance < minDistance) {
+    predatorList.forEach(predator => {
+      const distance = Math.sqrt((this.x - predator.x) ** 2 + (this.y - predator.y) ** 2);
+      if (distance < this.visionRadius && distance < minDistance) {
         minDistance = distance;
-        closestFood = food;
+        closestPredator = predator;
       }
     });
 
-    return closestFood;
+    return closestPredator;
   }
 
-  move(foodList) {
-    // Ищем ближайшую еду
-    this.targetFood = this.findClosestFood(foodList);
-
-    // Если нашли еду - двигаемся к ней
-    if (this.targetFood && !this.targetFood.isEaten) {
+  move(targetFood, closestPredator) {
+    if (closestPredator) {
       this.targetDirection = Math.atan2(
-        this.targetFood.y - this.y,
-        this.targetFood.x - this.x
+        this.y - closestPredator.y,
+        this.x - closestPredator.x
       );
-    } else if (Math.random() < 0.02) {
-      // Иначе случайно меняем направление
+    } 
+    else if (targetFood) {
+      this.targetDirection = Math.atan2(
+        targetFood.y - this.y,
+        targetFood.x - this.x
+      );
+    }
+    else if (Math.random() < 0.02) {
       this.targetDirection = Math.random() * Math.PI * 2;
     }
 
     this.direction = this.direction + 
       (this.targetDirection - this.direction) * this.turnSpeed;
-
 
     this.x = Math.max(5, Math.min(
       this.worldWidth - 5, 
@@ -75,7 +95,7 @@ export default class Prey {
   }
 
   tryReproduce() {
-    if (this.foodEaten >= this.hungerThreshold) {
+    if (this.foodEaten >= this.reproductionThreshold) {
       this.foodEaten = 0;
       return new Prey(
         this.x + (Math.random() * 30 - 15),
@@ -83,14 +103,20 @@ export default class Prey {
         this.speed,
         this.worldWidth,
         this.worldHeight,
-        this.hungerThreshold
+        this.reproductionThreshold,
+        this.visionRadius
       );
     }
     return null;
   }
 
-  update(foodList) {
-    this.move(foodList);
+  update(foodList, predatorList) {
+    if (!this.isAlive) return { updatedPrey: null, offspring: null };
+    
+    this.targetFood = this.getVisibleFood(foodList);
+    const closestPredator = this.getVisiblePredators(predatorList);
+    
+    this.move(this.targetFood, closestPredator);
     this.eat(foodList);
     const offspring = this.tryReproduce();
 

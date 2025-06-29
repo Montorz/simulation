@@ -13,30 +13,33 @@ export default function App() {
     foodCount: 100,
     predatorSpeed: 0.8,
     preySpeed: 1.0,
-    preyReproductionChance: 10,
+    preyReproductionThreshold: 5,
+    predatorReproductionThreshold: 3,
     worldWidth: 800,
     worldHeight: 600,
-    preyHungerThreshold: 5
+    preyVisionRadius: 120,
+    predatorVisionRadius: 100
   });
 
   const [predators, setPredators] = useState([]);
   const [prey, setPrey] = useState([]);
   const [food, setFood] = useState([]);
   const [stats, setStats] = useState({ cycles: 0 });
+  const [showVision, setShowVision] = useState(false);
 
   const initSimulation = useCallback(() => {
-    // Создаем хищников
     const newPredators = Array.from({ length: params.predatorCount }, () => (
       new Predator(
         Math.random() * params.worldWidth,
         Math.random() * params.worldHeight,
         params.predatorSpeed,
         params.worldWidth,
-        params.worldHeight
+        params.worldHeight,
+        params.predatorReproductionThreshold,
+        params.predatorVisionRadius
       )
     ));
 
-    // Создаем жертв
     const newPrey = Array.from({ length: params.preyCount }, () => (
       new Prey(
         Math.random() * params.worldWidth,
@@ -44,11 +47,11 @@ export default function App() {
         params.preySpeed,
         params.worldWidth,
         params.worldHeight,
-        params.preyHungerThreshold
+        params.preyReproductionThreshold,
+        params.preyVisionRadius
       )
     ));
 
-    // Создаем еду
     const newFood = Array.from({ length: params.foodCount }, () => (
       new Food(
         Math.random() * params.worldWidth,
@@ -66,32 +69,40 @@ export default function App() {
     const timer = setInterval(() => {
       setStats(prev => ({ cycles: prev.cycles + 1 }));
 
-      // Обновление еды (удаляем съеденную)
       setFood(prev => prev.filter(f => !f.isEaten));
 
-      // Обновление жертв
+      setPredators(prevPredators => {
+        const newPredators = [];
+        let preyToRemove = new Set();
+
+        const updatedPredators = prevPredators.map(p => {
+          const result = p.update(prey);
+          if (result.offspring) newPredators.push(result.offspring);
+          if (result.eatenPreyIndex !== -1) preyToRemove.add(result.eatenPreyIndex);
+          return result.updatedPredator;
+        });
+
+        if (preyToRemove.size > 0) {
+          setPrey(prev => prev.filter((_, index) => !preyToRemove.has(index)));
+        }
+
+        return [...updatedPredators, ...newPredators];
+      });
+
       setPrey(prev => {
         const newPrey = [];
         const updatedPrey = prev.map(p => {
-          const result = p.update(food);
+          const result = p.update(food, predators);
           if (result.offspring) newPrey.push(result.offspring);
           return result.updatedPrey;
         }).filter(p => p !== null);
         return [...updatedPrey, ...newPrey];
       });
 
-      // Обновление хищников
-      setPredators(prev => 
-        prev.map(p => {
-          p.update(prey);
-          return p;
-        })
-      );
-
     }, 100);
 
     return () => clearInterval(timer);
-  }, [food, prey]);
+  }, [food, prey, predators]);
 
   useEffect(() => {
     initSimulation();
@@ -105,6 +116,8 @@ export default function App() {
         params={params}
         onParamsChange={setParams}
         onReset={initSimulation}
+        showVision={showVision}
+        setShowVision={setShowVision}
       />
 
       <div className="stats">
@@ -120,6 +133,7 @@ export default function App() {
         food={food}
         width={params.worldWidth}
         height={params.worldHeight}
+        showVision={showVision}
       />
     </div>
   );

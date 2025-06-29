@@ -1,7 +1,7 @@
-export default function ControlsPanel({ params, onParamsChange }) {
+export default function ControlsPanel({ params, onParamsChange, onReset, showVision, setShowVision }) {
   return (
     <div className="controls">
-      <h3>Управление экосистемой</h3>
+      <h3>Параметры симуляции</h3>
       
       <div className="control-group">
         <label>
@@ -20,10 +20,21 @@ export default function ControlsPanel({ params, onParamsChange }) {
           <input
             type="range"
             min="0.1"
-            max="3"
+            max="2"
             step="0.1"
             value={params.predatorSpeed}
             onChange={(e) => onParamsChange({ ...params, predatorSpeed: +e.target.value })}
+          />
+        </label>
+
+        <label>
+          Радиус охоты: {params.predatorVisionRadius}
+          <input
+            type="range"
+            min="50"
+            max="250"
+            value={params.predatorVisionRadius}
+            onChange={(e) => onParamsChange({ ...params, predatorVisionRadius: +e.target.value })}
           />
         </label>
       </div>
@@ -45,10 +56,21 @@ export default function ControlsPanel({ params, onParamsChange }) {
           <input
             type="range"
             min="0.1"
-            max="3"
+            max="2"
             step="0.1"
             value={params.preySpeed}
             onChange={(e) => onParamsChange({ ...params, preySpeed: +e.target.value })}
+          />
+        </label>
+
+        <label>
+          Радиус зрения: {params.preyVisionRadius}
+          <input
+            type="range"
+            min="50"
+            max="250"
+            value={params.preyVisionRadius}
+            onChange={(e) => onParamsChange({ ...params, preyVisionRadius: +e.target.value })}
           />
         </label>
       </div>
@@ -59,24 +81,23 @@ export default function ControlsPanel({ params, onParamsChange }) {
           <input
             type="range"
             min="10"
-            max="200"
+            max="300"
             value={params.foodCount}
             onChange={(e) => onParamsChange({ ...params, foodCount: +e.target.value })}
           />
         </label>
 
-        <label>
-          Шанс размножения жертв (%):
+        <label className="toggle-vision">
+          Показать радиусы:
           <input
-            type="range"
-            min="0"
-            max="20"
-            value={params.preyReproductionChance}
-            onChange={(e) => onParamsChange({ ...params, preyReproductionChance: +e.target.value })}
+            type="checkbox"
+            checked={showVision}
+            onChange={() => setShowVision(!showVision)}
           />
-          {params.preyReproductionChance}%
         </label>
       </div>
+
+      <button onClick={onReset}>Сбросить симуляцию</button>
     </div>
   );
 }
