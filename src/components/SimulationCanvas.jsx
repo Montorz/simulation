@@ -11,49 +11,43 @@ export default function SimulationCanvas({ predators, prey, food, width, height,
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, width, height);
     
-    // Draw food
-    ctx.fillStyle = '#4CAF50';
+
     food.forEach(f => {
       if (!f.isEaten) {
         ctx.beginPath();
         ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = f.isPoisonous ? '#FF5555' : '#4CAF50';
         ctx.fill();
       }
     });
 
-    // Draw prey vision if enabled
-    if (showVision) {
-      prey.forEach(p => {
+
+    prey.forEach(p => {
+      if (showVision) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.visionRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(33, 150, 243, 0.2)';
+        ctx.strokeStyle = 'rgba(33, 150, 243, 0.3)';
         ctx.lineWidth = 1;
         ctx.stroke();
-      });
-    }
-
-    // Draw prey
-    ctx.fillStyle = '#2196F3';
-    prey.forEach(p => {
+      }
+      
       ctx.beginPath();
       ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = p.isPoisoned ? '#AA00FF' : '#2196F3';
       ctx.fill();
     });
 
-    // Draw predator vision if enabled
-    if (showVision) {
-      predators.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.visionRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(244, 67, 54, 0.2)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
-    }
 
-    // Draw predators
     ctx.fillStyle = '#F44336';
     predators.forEach(p => {
+      if (showVision) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.visionRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(244, 67, 54, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      
       ctx.beginPath();
       ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
       ctx.fill();
@@ -65,6 +59,6 @@ export default function SimulationCanvas({ predators, prey, food, width, height,
     ref={canvasRef} 
     width={width} 
     height={height}
-    style={{ border: '1px solid #444' }}
+    style={{ border: '1px solid #444', maxHeight: '95vh' }}
   />;
 }

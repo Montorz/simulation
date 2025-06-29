@@ -1,11 +1,44 @@
-export default function ControlsPanel({ params, onParamsChange, onReset, showVision, setShowVision }) {
+export default function ControlsPanel({
+  params,
+  onParamsChange,
+  onReset,
+  showVision,
+  setShowVision,
+  isRunning,
+  setIsRunning,
+  stats
+}) {
   return (
     <div className="controls">
-      <h3>Параметры симуляции</h3>
-      
+      <div className="stats">
+        <h3>Статистика</h3>
+        <p>Хищников: <span>{stats.predators || 0}</span></p>
+        <p>Жертв: <span>{stats.prey || 0}</span></p>
+        <p>Травы: <span>{stats.food || 0}/{params.foodCount}</span></p>
+        <p>Ядовитых: <span>{stats.poisoned || 0}</span></p>
+      </div>
+
       <div className="control-group">
+        <h3>Управление</h3>
+        <button onClick={() => setIsRunning(!isRunning)}>
+          {isRunning ? 'Пауза' : 'Старт'}
+        </button>
+        <div className="button-spacer"></div>
+        <button onClick={onReset}>Сбросить симуляцию</button>
+        <label className="toggle-vision">
+          <input
+            type="checkbox"
+            checked={showVision}
+            onChange={() => setShowVision(!showVision)}
+          />
+          Показать радиус зрения
+        </label>
+      </div>
+
+      <div className="control-group">
+        <h3>Хищники</h3>
         <label>
-          Хищники: {params.predatorCount}
+          Количество: {params.predatorCount}
           <input
             type="range"
             min="1"
@@ -14,9 +47,8 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, predatorCount: +e.target.value })}
           />
         </label>
-
         <label>
-          Скорость хищников: {params.predatorSpeed.toFixed(1)}
+          Скорость: {params.predatorSpeed.toFixed(1)}
           <input
             type="range"
             min="0.1"
@@ -26,9 +58,8 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, predatorSpeed: +e.target.value })}
           />
         </label>
-
         <label>
-          Радиус охоты: {params.predatorVisionRadius}
+          Радиус зрения: {params.predatorVisionRadius}
           <input
             type="range"
             min="50"
@@ -37,11 +68,22 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, predatorVisionRadius: +e.target.value })}
           />
         </label>
+        <label>
+          Жертв для размножения: {params.predatorReproductionThreshold}
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={params.predatorReproductionThreshold}
+            onChange={(e) => onParamsChange({ ...params, predatorReproductionThreshold: +e.target.value })}
+          />
+        </label>
       </div>
 
       <div className="control-group">
+        <h3>Жертвы</h3>
         <label>
-          Жертвы: {params.preyCount}
+          Количество: {params.preyCount}
           <input
             type="range"
             min="1"
@@ -50,9 +92,8 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, preyCount: +e.target.value })}
           />
         </label>
-
         <label>
-          Скорость жертв: {params.preySpeed.toFixed(1)}
+          Скорость: {params.preySpeed.toFixed(1)}
           <input
             type="range"
             min="0.1"
@@ -62,7 +103,6 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, preySpeed: +e.target.value })}
           />
         </label>
-
         <label>
           Радиус зрения: {params.preyVisionRadius}
           <input
@@ -73,11 +113,22 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, preyVisionRadius: +e.target.value })}
           />
         </label>
+        <label>
+          Травы для размножения: {params.preyReproductionThreshold}
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={params.preyReproductionThreshold}
+            onChange={(e) => onParamsChange({ ...params, preyReproductionThreshold: +e.target.value })}
+          />
+        </label>
       </div>
 
       <div className="control-group">
+        <h3>Окружение</h3>
         <label>
-          Трава: {params.foodCount}
+          Количество травы: {params.foodCount}
           <input
             type="range"
             min="10"
@@ -86,18 +137,17 @@ export default function ControlsPanel({ params, onParamsChange, onReset, showVis
             onChange={(e) => onParamsChange({ ...params, foodCount: +e.target.value })}
           />
         </label>
-
-        <label className="toggle-vision">
-          Показать радиусы:
+        <label>
+          Шанс ядовитой травы: {(params.poisonChance * 100).toFixed(0)}%
           <input
-            type="checkbox"
-            checked={showVision}
-            onChange={() => setShowVision(!showVision)}
+            type="range"
+            min="1"
+            max="50"
+            value={params.poisonChance * 100}
+            onChange={(e) => onParamsChange({ ...params, poisonChance: +e.target.value / 100 })}
           />
         </label>
       </div>
-
-      <button onClick={onReset}>Сбросить симуляцию</button>
     </div>
   );
 }

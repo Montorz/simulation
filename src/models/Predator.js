@@ -13,6 +13,7 @@ export default class Predator {
     this.visionRadius = visionRadius;
     this.targetPrey = null;
     this.huntingCooldown = 0;
+    this.alive = true;
   }
 
   getVisiblePrey(preyList) {
@@ -24,7 +25,7 @@ export default class Predator {
     }
 
     const visiblePrey = preyList.filter(p => 
-      p && 
+      p && p.alive &&
       Math.sqrt((this.x - p.x) ** 2 + (this.y - p.y) ** 2) < this.visionRadius
     );
 
@@ -59,7 +60,7 @@ export default class Predator {
   }
 
   attack(preyList) {
-    if (!this.targetPrey) return { eaten: false, index: -1 };
+    if (!this.targetPrey) return { eaten: false, index: -1, predatorDied: false };
 
     const distance = Math.sqrt(
       (this.x - this.targetPrey.x) ** 2 + 
@@ -69,11 +70,16 @@ export default class Predator {
     if (distance < 15) {
       const { index } = this.getVisiblePrey(preyList);
       if (index !== -1) {
+        if (this.targetPrey.isPoisoned) {
+          this.alive = false;
+          return { eaten: false, index: -1, predatorDied: true };
+        }
+        
         this.preyEaten++;
-        return { eaten: true, index };
+        return { eaten: true, index, predatorDied: false };
       }
     }
-    return { eaten: false, index: -1 };
+    return { eaten: false, index: -1, predatorDied: false };
   }
 
   tryReproduce() {
@@ -92,7 +98,7 @@ export default class Predator {
     return null;
   }
 
-  update(preyList) {
+  update(preyList, foodList) {
     const { prey: visiblePrey } = this.getVisiblePrey(preyList);
     this.targetPrey = visiblePrey;
 
@@ -104,11 +110,11 @@ export default class Predator {
     }
 
     this.move();
-    const { eaten, index } = this.attack(preyList);
+    const { eaten, index, predatorDied } = this.attack(preyList);
     const offspring = this.tryReproduce();
 
     return {
-      updatedPredator: this,
+      updatedPredator: predatorDied ? null : this,
       offspring: offspring,
       eatenPreyIndex: eaten ? index : -1
     };

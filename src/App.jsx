@@ -15,17 +15,25 @@ export default function App() {
     preySpeed: 1.0,
     preyReproductionThreshold: 5,
     predatorReproductionThreshold: 3,
-    worldWidth: 800,
-    worldHeight: 600,
+    worldWidth: 1500,
+    worldHeight: 1500,
     preyVisionRadius: 120,
-    predatorVisionRadius: 100
+    predatorVisionRadius: 100,
+    poisonChance: 0.1,
+    poisonDuration: 100
   });
 
   const [predators, setPredators] = useState([]);
   const [prey, setPrey] = useState([]);
   const [food, setFood] = useState([]);
-  const [stats, setStats] = useState({ cycles: 0 });
+  const [stats, setStats] = useState({ 
+    predators: 0,
+    prey: 0,
+    food: 0,
+    poisoned: 0
+  });
   const [showVision, setShowVision] = useState(false);
+  const [isRunning, setIsRunning] = useState(true);
 
   const initSimulation = useCallback(() => {
     const newPredators = Array.from({ length: params.predatorCount }, () => (
@@ -62,31 +70,38 @@ export default function App() {
     setPredators(newPredators);
     setPrey(newPrey);
     setFood(newFood);
-    setStats({ cycles: 0 });
+    setStats({
+      predators: newPredators.length,
+      prey: newPrey.length,
+      food: newFood.length,
+      poisoned: 0
+    });
   }, [params]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setStats(prev => ({ cycles: prev.cycles + 1 }));
+    if (!isRunning) return;
 
+    const timer = setInterval(() => {
       setFood(prev => prev.filter(f => !f.isEaten));
 
       setPredators(prevPredators => {
         const newPredators = [];
         let preyToRemove = new Set();
+        let predatorDied = false;
 
         const updatedPredators = prevPredators.map(p => {
-          const result = p.update(prey);
+          const result = p.update(prey, food);
           if (result.offspring) newPredators.push(result.offspring);
           if (result.eatenPreyIndex !== -1) preyToRemove.add(result.eatenPreyIndex);
+          if (result.predatorDied) predatorDied = true;
           return result.updatedPredator;
-        });
+        }).filter(p => p !== null);
 
         if (preyToRemove.size > 0) {
           setPrey(prev => prev.filter((_, index) => !preyToRemove.has(index)));
         }
 
-        return [...updatedPredators, ...newPredators];
+        return predatorDied ? updatedPredators.filter(p => p !== null) : [...updatedPredators, ...newPredators];
       });
 
       setPrey(prev => {
@@ -99,42 +114,47 @@ export default function App() {
         return [...updatedPrey, ...newPrey];
       });
 
+      setStats({
+        predators: predators.length,
+        prey: prey.length,
+        food: food.filter(f => !f.isEaten).length,
+        poisoned: prey.filter(p => p.isPoisoned).length
+      });
+
     }, 100);
 
     return () => clearInterval(timer);
-  }, [food, prey, predators]);
+  }, [isRunning, food, prey, predators]);
 
   useEffect(() => {
     initSimulation();
   }, [initSimulation]);
 
   return (
-    <div className="app">
-      <h1>Экосистема Хищник-Жертва</h1>
-      
-      <ControlsPanel
-        params={params}
-        onParamsChange={setParams}
-        onReset={initSimulation}
-        showVision={showVision}
-        setShowVision={setShowVision}
-      />
-
-      <div className="stats">
-        <p>Циклов: {stats.cycles}</p>
-        <p>Хищников: {predators.length}</p>
-        <p>Жертв: {prey.length}</p>
-        <p>Травы: {food.filter(f => !f.isEaten).length}/{params.foodCount}</p>
+    <div className="app-container">
+      <div className="simulation-area">
+        <SimulationCanvas
+          predators={predators}
+          prey={prey}
+          food={food}
+          width={params.worldWidth}
+          height={params.worldHeight}
+          showVision={showVision}
+        />
       </div>
-
-      <SimulationCanvas
-        predators={predators}
-        prey={prey}
-        food={food}
-        width={params.worldWidth}
-        height={params.worldHeight}
-        showVision={showVision}
-      />
+      
+      <div className="controls-area">
+        <ControlsPanel
+          params={params}
+          onParamsChange={setParams}
+          onReset={initSimulation}
+          showVision={showVision}
+          setShowVision={setShowVision}
+          isRunning={isRunning}
+          setIsRunning={setIsRunning}
+          stats={stats}
+        />
+      </div>
     </div>
   );
 }

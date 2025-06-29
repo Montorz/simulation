@@ -12,8 +12,10 @@ export default class Prey {
     this.reproductionThreshold = reproductionThreshold;
     this.visionRadius = visionRadius;
     this.targetFood = null;
-    this.isAlive = true;
     this.foodMemory = [];
+    this.alive = true;
+    this.isPoisoned = false;
+    this.poisonDuration = 0;
   }
 
   getVisibleFood(foodList) {
@@ -38,6 +40,7 @@ export default class Prey {
     let minDistance = Infinity;
 
     predatorList.forEach(predator => {
+      if (!predator.alive) return;
       const distance = Math.sqrt((this.x - predator.x) ** 2 + (this.y - predator.y) ** 2);
       if (distance < this.visionRadius && distance < minDistance) {
         minDistance = distance;
@@ -54,14 +57,12 @@ export default class Prey {
         this.y - closestPredator.y,
         this.x - closestPredator.x
       );
-    } 
-    else if (targetFood) {
+    } else if (targetFood) {
       this.targetDirection = Math.atan2(
         targetFood.y - this.y,
         targetFood.x - this.x
       );
-    }
-    else if (Math.random() < 0.02) {
+    } else if (Math.random() < 0.02) {
       this.targetDirection = Math.random() * Math.PI * 2;
     }
 
@@ -89,6 +90,12 @@ export default class Prey {
     if (distance < 10) {
       this.targetFood.isEaten = true;
       this.foodEaten++;
+      
+      if (this.targetFood.isPoisonous) {
+        this.isPoisoned = true;
+        this.poisonDuration = 100;
+      }
+      
       return true;
     }
     return false;
@@ -111,7 +118,14 @@ export default class Prey {
   }
 
   update(foodList, predatorList) {
-    if (!this.isAlive) return { updatedPrey: null, offspring: null };
+    if (!this.alive) return { updatedPrey: null, offspring: null };
+    
+    if (this.isPoisoned) {
+      this.poisonDuration--;
+      if (this.poisonDuration <= 0) {
+        this.isPoisoned = false;
+      }
+    }
     
     this.targetFood = this.getVisibleFood(foodList);
     const closestPredator = this.getVisiblePredators(predatorList);
