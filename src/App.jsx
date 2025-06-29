@@ -6,23 +6,24 @@ import Prey from './models/Prey';
 import Food from './models/Food';
 import './App.css';
 
-export default function App() {
-  const [params, setParams] = useState({
-    predatorCount: 5,
-    preyCount: 20,
-    foodCount: 100,
-    predatorSpeed: 0.8,
-    preySpeed: 1.0,
-    preyReproductionThreshold: 5,
-    predatorReproductionThreshold: 3,
-    worldWidth: 1500,
-    worldHeight: 1500,
-    preyVisionRadius: 120,
-    predatorVisionRadius: 100,
-    poisonChance: 0.1,
-    poisonDuration: 100
-  });
+const DEFAULT_PARAMS = {
+  predatorCount: 8,
+  preyCount: 40,
+  foodCount: 150,
+  predatorSpeed: 1.2,
+  preySpeed: 1.5,
+  preyReproductionThreshold: 4,
+  predatorReproductionThreshold: 2,
+  worldWidth: 1500,
+  worldHeight: 1500,
+  preyVisionRadius: 140,
+  predatorVisionRadius: 160,
+  poisonChance: 0.05,
+  recoveryTimeSeconds: 20
+};
 
+export default function App() {
+  const [params, setParams] = useState(DEFAULT_PARAMS);
   const [predators, setPredators] = useState([]);
   const [prey, setPrey] = useState([]);
   const [food, setFood] = useState([]);
@@ -33,7 +34,6 @@ export default function App() {
     poisoned: 0
   });
   const [showVision, setShowVision] = useState(false);
-  const [isRunning, setIsRunning] = useState(true);
 
   const initSimulation = useCallback(() => {
     const newPredators = Array.from({ length: params.predatorCount }, () => (
@@ -60,12 +60,15 @@ export default function App() {
       )
     ));
 
-    const newFood = Array.from({ length: params.foodCount }, () => (
-      new Food(
+    const newFood = Array.from({ length: params.foodCount }, () => {
+      const foodItem = new Food(
         Math.random() * params.worldWidth,
-        Math.random() * params.worldHeight
-      )
-    ));
+        Math.random() * params.worldHeight,
+        params.poisonChance
+      );
+      foodItem.maxRecoveryTime = params.recoveryTimeSeconds * 10;
+      return foodItem;
+    });
 
     setPredators(newPredators);
     setPrey(newPrey);
@@ -79,21 +82,59 @@ export default function App() {
   }, [params]);
 
   useEffect(() => {
-    if (!isRunning) return;
+    initSimulation();
+  }, [
+    params.predatorCount,
+    params.preyCount,
+    params.foodCount,
+    params.poisonChance
+  ]);
 
+  useEffect(() => {
+    setPredators(prev => prev.map(p => {
+      p.speed = params.predatorSpeed;
+      p.visionRadius = params.predatorVisionRadius;
+      p.reproductionThreshold = params.predatorReproductionThreshold;
+      return p;
+    }));
+
+    setPrey(prev => prev.map(p => {
+      p.speed = params.preySpeed;
+      p.visionRadius = params.preyVisionRadius;
+      p.reproductionThreshold = params.preyReproductionThreshold;
+      return p;
+    }));
+
+    setFood(prev => prev.map(f => {
+      f.maxRecoveryTime = params.recoveryTimeSeconds * 10;
+      return f;
+    }));
+  }, [
+    params.predatorSpeed,
+    params.preySpeed,
+    params.predatorVisionRadius,
+    params.preyVisionRadius,
+    params.predatorReproductionThreshold,
+    params.preyReproductionThreshold,
+    params.recoveryTimeSeconds
+  ]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
-      setFood(prev => prev.filter(f => !f.isEaten));
+      setFood(prev => {
+        const updatedFood = [...prev];
+        updatedFood.forEach(f => f.update(1));
+        return updatedFood.filter(f => !f.isEaten || f.recoveryTime > 0);
+      });
 
       setPredators(prevPredators => {
         const newPredators = [];
         let preyToRemove = new Set();
-        let predatorDied = false;
 
         const updatedPredators = prevPredators.map(p => {
           const result = p.update(prey, food);
           if (result.offspring) newPredators.push(result.offspring);
           if (result.eatenPreyIndex !== -1) preyToRemove.add(result.eatenPreyIndex);
-          if (result.predatorDied) predatorDied = true;
           return result.updatedPredator;
         }).filter(p => p !== null);
 
@@ -101,7 +142,7 @@ export default function App() {
           setPrey(prev => prev.filter((_, index) => !preyToRemove.has(index)));
         }
 
-        return predatorDied ? updatedPredators.filter(p => p !== null) : [...updatedPredators, ...newPredators];
+        return [...updatedPredators, ...newPredators];
       });
 
       setPrey(prev => {
@@ -120,15 +161,15 @@ export default function App() {
         food: food.filter(f => !f.isEaten).length,
         poisoned: prey.filter(p => p.isPoisoned).length
       });
-
     }, 100);
 
     return () => clearInterval(timer);
-  }, [isRunning, food, prey, predators]);
+  }, [food, prey, predators]);
 
-  useEffect(() => {
+  const handleReset = () => {
+    setParams(DEFAULT_PARAMS);
     initSimulation();
-  }, [initSimulation]);
+  };
 
   return (
     <div className="app-container">
@@ -147,11 +188,9 @@ export default function App() {
         <ControlsPanel
           params={params}
           onParamsChange={setParams}
-          onReset={initSimulation}
+          onReset={handleReset}
           showVision={showVision}
           setShowVision={setShowVision}
-          isRunning={isRunning}
-          setIsRunning={setIsRunning}
           stats={stats}
         />
       </div>
