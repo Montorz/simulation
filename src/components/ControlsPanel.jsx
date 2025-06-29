@@ -42,7 +42,7 @@ export default function ControlsPanel({
           <input
             type="range"
             min="1"
-            max="20"
+            max="10"
             value={params.predatorCount}
             onChange={(e) => onParamsChange({ ...params, predatorCount: +e.target.value })}
           />
@@ -52,8 +52,8 @@ export default function ControlsPanel({
           Скорость: {params.predatorSpeed.toFixed(1)}
           <input
             type="range"
-            min="0.5"
-            max="2.5"
+            min="0"
+            max="2"
             step="0.1"
             value={params.predatorSpeed}
             onChange={(e) => onParamsChange({ ...params, predatorSpeed: +e.target.value })}
@@ -64,8 +64,8 @@ export default function ControlsPanel({
           Радиус зрения: {params.predatorVisionRadius}
           <input
             type="range"
-            min="50"
-            max="300"
+            min="0"
+            max="200"
             value={params.predatorVisionRadius}
             onChange={(e) => onParamsChange({ ...params, predatorVisionRadius: +e.target.value })}
           />
@@ -92,7 +92,7 @@ export default function ControlsPanel({
           <input
             type="range"
             min="10"
-            max="100"
+            max="50"
             value={params.preyCount}
             onChange={(e) => onParamsChange({ ...params, preyCount: +e.target.value })}
           />
@@ -102,8 +102,8 @@ export default function ControlsPanel({
           Скорость: {params.preySpeed.toFixed(1)}
           <input
             type="range"
-            min="0.5"
-            max="2.5"
+            min="0"
+            max="2"
             step="0.1"
             value={params.preySpeed}
             onChange={(e) => onParamsChange({ ...params, preySpeed: +e.target.value })}
@@ -114,8 +114,8 @@ export default function ControlsPanel({
           Радиус зрения: {params.preyVisionRadius}
           <input
             type="range"
-            min="50"
-            max="300"
+            min="0"
+            max="200"
             value={params.preyVisionRadius}
             onChange={(e) => onParamsChange({ ...params, preyVisionRadius: +e.target.value })}
           />
@@ -141,8 +141,8 @@ export default function ControlsPanel({
           Трава: {params.foodCount}
           <input
             type="range"
-            min="50"
-            max="300"
+            min="0"
+            max="100"
             value={params.foodCount}
             onChange={(e) => onParamsChange({ ...params, foodCount: +e.target.value })}
           />
@@ -163,7 +163,7 @@ export default function ControlsPanel({
           Восстановление: {params.recoveryTimeSeconds} сек
           <input
             type="range"
-            min="5"
+            min="0"
             max="60"
             value={params.recoveryTimeSeconds}
             onChange={(e) => onParamsChange({ ...params, recoveryTimeSeconds: +e.target.value })}

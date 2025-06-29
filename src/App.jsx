@@ -8,19 +8,19 @@ import './App.css';
 
 // Параметры по умолчанию для симуляции
 const DEFAULT_PARAMS = {
-  predatorCount: 6,          // Начальное количество хищников
-  preyCount: 40,            // Начальное количество жертв
-  foodCount: 180,           // Начальное количество травы
-  predatorSpeed: 1.3,       // Скорость хищников
-  preySpeed: 1.8,           // Скорость жертв
-  preyReproductionThreshold: 4,     // Сколько трав нужно жертве для размножения
+  predatorCount: 3,          // Начальное количество хищников
+  preyCount: 20,            // Начальное количество жертв
+  foodCount: 50,           // Начальное количество травы
+  predatorSpeed: 2,       // Скорость хищников
+  preySpeed: 1.5,           // Скорость жертв
+  preyReproductionThreshold: 8,     // Сколько трав нужно жертве для размножения
   predatorReproductionThreshold: 3, // Сколько жертв нужно хищнику для размножения
   worldWidth: 2500,         // Ширина мира
   worldHeight: 2000,        // Высота мира
-  preyVisionRadius: 180,    // Радиус зрения жертв
-  predatorVisionRadius: 150, // Радиус зрения хищников
+  preyVisionRadius: 200,    // Радиус зрения жертв
+  predatorVisionRadius: 190, // Радиус зрения хищников
   poisonChance: 0.02,       // Шанс ядовитой травы
-  recoveryTimeSeconds: 20    // Время восстановления травы в секундах
+  recoveryTimeSeconds: 60   // Время восстановления травы в секундах
 };
 
 export default function App() {

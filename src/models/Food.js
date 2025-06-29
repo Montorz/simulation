@@ -1,34 +1,31 @@
 export default class Food {
   constructor(x, y, poisonChance = 0.05) {
-    this.x = x; // Позиция по X
-    this.y = y; // Позиция по Y
-    this.size = 6; // Размер отрисовки
-    this.isEaten = false; // Флаг съеденности
-    this.isPoisonous = Math.random() < poisonChance; // Ядовитая или нет
+    this.x = x; // Позиция X
+    this.y = y; // Позиция Y
+    this.size = 6; // Размер еды
+    this.isEaten = false; // Съедена ли
+    this.isPoisonous = Math.random() < poisonChance; // Ядовитая (5% шанс)
     this.recoveryTime = 0; // Таймер восстановления
-    this.maxRecoveryTime = 100; // Максимальное время восстановления в кадрах
+    this.maxRecoveryTime = 100; // Время до восстановления
   }
 
-  // Обновление состояния восстановления
+  // Обновляет состояние еды (восстановление после съедения)
   update(recoverySpeed = 1) {
-    // Если трава съедена и еще восстанавливается
     if (this.isEaten && this.recoveryTime > 0) {
-      this.recoveryTime -= recoverySpeed; // Уменьшение таймера
-      
-      // Если время восстановления закончилось
+      this.recoveryTime -= recoverySpeed;
       if (this.recoveryTime <= 0) {
         this.recoveryTime = 0;
-        this.isEaten = false; // Трава восстановилась
+        this.isEaten = false; // Восстанавливаем еду
       }
     }
   }
 
-  // Метод поедания травы
+  // Пытается съесть еду
   eat() {
-    if (this.isEaten) return false; // Если уже съедена
+    if (this.isEaten) return false; // Уже съедена
     
     this.isEaten = true;
-    this.recoveryTime = this.maxRecoveryTime; // Запуск таймера восстановления
-    return true; // Успешное поедание
+    this.recoveryTime = this.maxRecoveryTime; // Запускаем таймер восстановления
+    return true; // Успешно съедена
   }
 }
