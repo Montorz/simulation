@@ -1,16 +1,18 @@
 export default function ControlsPanel({
-  params,
-  onParamsChange,
-  onReset,
-  showVision,
-  setShowVision,
-  stats,
-  bushes
+  params,           // Текущие параметры симуляции
+  onParamsChange,   // Функция изменения параметров
+  onReset,          // Функция сброса симуляции
+  showVision,       // Флаг отображения радиусов зрения
+  setShowVision,    // Функция переключения отображения радиусов
+  stats,            // Статистика симуляции
+  bushes            // Массив кустов
 }) {
+  // Подсчет количества спрятавшихся жертв
   const hidingPreyCount = bushes.filter(b => b.hidingPrey !== null).length;
 
   return (
     <div className="controls">
+      {/* Секция статистики */}
       <div className="stats">
         <h3>Статистика</h3>
         <p>Хищников: <span>{stats.predators}</span></p>
@@ -20,6 +22,7 @@ export default function ControlsPanel({
         <p>Травы: <span>{stats.food}/{params.foodCount}</span></p>
       </div>
 
+      {/* Секция основных управляющих элементов */}
       <div className="control-group">
         <h3>Управление</h3>
         <button onClick={onReset}>Сбросить</button>
@@ -33,13 +36,14 @@ export default function ControlsPanel({
         </label>
       </div>
 
+      {/* Секция параметров хищников */}
       <div className="control-group">
         <h3>Хищники</h3>
         <label>
           Количество: {params.predatorCount}
           <input
             type="range"
-            min="1"
+            min="0"
             max="10"
             value={params.predatorCount}
             onChange={(e) => onParamsChange({ ...params, predatorCount: +e.target.value })}
@@ -78,14 +82,15 @@ export default function ControlsPanel({
         </label>
       </div>
 
+      {/* Секция параметров жертв */}
       <div className="control-group">
         <h3>Жертвы</h3>
         <label>
           Количество: {params.preyCount}
           <input
             type="range"
-            min="10"
-            max="50"
+            min="0"
+            max="20"
             value={params.preyCount}
             onChange={(e) => onParamsChange({ ...params, preyCount: +e.target.value })}
           />
@@ -123,6 +128,7 @@ export default function ControlsPanel({
         </label>
       </div>
 
+      {/* Секция параметров окружения */}
       <div className="control-group">
         <h3>Окружение</h3>
         <label>
@@ -160,7 +166,7 @@ export default function ControlsPanel({
           <input
             type="range"
             min="0"
-            max="3"
+            max="5"
             value={params.bushCount}
             onChange={(e) => onParamsChange({ ...params, bushCount: +e.target.value })}
           />

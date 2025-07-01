@@ -5,13 +5,14 @@ export default class Predator {
     this.speed = speed;
     this.worldWidth = worldWidth;
     this.worldHeight = worldHeight;
-    this.direction = Math.random() * Math.PI * 2;
-    this.preyEaten = 0;
-    this.reproductionThreshold = reproductionThreshold;
-    this.visionRadius = visionRadius;
-    this.alive = true;
+    this.direction = Math.random() * Math.PI * 2; // Направление движения
+    this.preyEaten = 0; // Количество съеденных жертв
+    this.reproductionThreshold = reproductionThreshold; // Порог для размножения
+    this.visionRadius = visionRadius; // Радиус обзора
+    this.alive = true; // Жив ли хищник
   }
 
+  // Находим видимую жертву
   getVisiblePrey(preyList) {
     for (let i = 0; i < preyList.length; i++) {
       const prey = preyList[i];
@@ -22,6 +23,7 @@ export default class Predator {
     return { prey: null, index: -1 };
   }
 
+  // Проверяем столкновение с кустом
   checkBushCollision(bushList, newX, newY) {
     for (const bush of bushList) {
       if (bush.isObstacle && bush.getDistance({ x: newX, y: newY }) < bush.size) {
@@ -31,13 +33,16 @@ export default class Predator {
     return false;
   }
 
+  // Основная логика движения
   move(targetPrey, bushList) {
     const baseSpeed = this.speed;
     let newDirection = this.direction;
     
     if (targetPrey) {
+      // Движется к жертве
       newDirection = Math.atan2(targetPrey.y - this.y, targetPrey.x - this.x);
     } else if (Math.random() < 0.05) {
+      // Случайное направление
       newDirection = Math.random() * Math.PI * 2;
     }
 
@@ -45,15 +50,14 @@ export default class Predator {
     let newX = this.x + Math.cos(newDirection) * baseSpeed;
     let newY = this.y + Math.sin(newDirection) * baseSpeed;
 
-    // Если на пути куст - выбираем новое направление
+    // Обходим кусты
     if (this.checkBushCollision(bushList, newX, newY)) {
-      // Пробуем обойти куст
       const avoidAngle = Math.random() * Math.PI / 2 - Math.PI / 4;
       newDirection += avoidAngle;
       newX = this.x + Math.cos(newDirection) * baseSpeed;
       newY = this.y + Math.sin(newDirection) * baseSpeed;
       
-      // Если всё ещё сталкиваемся - остаёмся на месте
+      // Остаёмся на месте если сталкиваемся
       if (this.checkBushCollision(bushList, newX, newY)) {
         newX = this.x;
         newY = this.y;
@@ -65,6 +69,7 @@ export default class Predator {
     this.y = Math.max(5, Math.min(this.worldHeight - 5, newY));
   }
 
+  // Атака жертвы
   attack(preyList) {
     const { prey: targetPrey, index } = this.getVisiblePrey(preyList);
     
@@ -73,22 +78,25 @@ export default class Predator {
     }
 
     if (targetPrey.isPoisoned) {
+      // Умирает если жертва отравлена
       this.alive = false;
       targetPrey.alive = false;
       return { eaten: true, index, predatorDied: true, preyDied: true };
     }
 
-    this.preyEaten++;
+    this.preyEaten++; // Увеличиваем счетчик
     return { eaten: true, index, predatorDied: false, preyDied: true };
   }
 
+  // Попытка размножения
   tryReproduce() {
     if (this.preyEaten < this.reproductionThreshold) return null;
     
-    this.preyEaten = 0;
-    return this.createOffspring();
+    this.preyEaten = 0; // Сбрасываем счетчик жертв
+    return this.createOffspring(); // Создаем потомка
   }
 
+  // Обновление состояния хищника
   update(preyList, bushList) {
     const { prey: targetPrey } = this.getVisiblePrey(preyList);
     
@@ -104,10 +112,12 @@ export default class Predator {
     };
   }
 
+  // Расчет расстояния до цели
   getDistance(target) {
     return Math.sqrt((this.x - target.x) ** 2 + (this.y - target.y) ** 2);
   }
 
+  // Создание потомка
   createOffspring() {
     return new Predator(
       this.x + (Math.random() * 30 - 15),

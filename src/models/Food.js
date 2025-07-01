@@ -4,18 +4,17 @@ export default class Food {
     let attempts = 0;
     let finalX, finalY;
     
+    // Генерируем позицию которая будет не пересекаться с кустами
     do {
       finalX = Math.random() * worldWidth;
       finalY = Math.random() * worldHeight;
       validPosition = true;
       
-      // Проверяем расстояние до всех кустов
       for (const bush of bushList) {
         const dx = finalX - bush.x;
         const dy = finalY - bush.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // Если еда внутри куста (с запасом 5px)
         if (distance < bush.size + 5) {
           validPosition = false;
           break;
@@ -28,12 +27,13 @@ export default class Food {
     this.x = finalX;
     this.y = finalY;
     this.size = 6;
-    this.isEaten = false;
-    this.isPoisonous = Math.random() < poisonChance;
-    this.recoveryTime = 0;
-    this.maxRecoveryTime = 100;
+    this.isEaten = false; // Съедена ли еда
+    this.isPoisonous = Math.random() < poisonChance; // Ядовита ли еда
+    this.recoveryTime = 0; // Время восстановления
+    this.maxRecoveryTime = 100; // Максимальное время восстановления
   }
 
+  // Обновление состояния еды
   update(recoverySpeed = 1) {
     if (this.isEaten && this.recoveryTime > 0) {
       this.recoveryTime -= recoverySpeed;
@@ -44,6 +44,7 @@ export default class Food {
     }
   }
 
+  // Поедание еды
   eat() {
     if (this.isEaten) return false;
     
