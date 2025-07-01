@@ -4,42 +4,87 @@ import ControlsPanel from './components/ControlsPanel';
 import Predator from './models/Predator';
 import Prey from './models/Prey';
 import Food from './models/Food';
+import Bush from './models/Bush';
 import './App.css';
 
-// Параметры по умолчанию для симуляции
 const DEFAULT_PARAMS = {
-  predatorCount: 3,          // Начальное количество хищников
-  preyCount: 20,            // Начальное количество жертв
-  foodCount: 50,           // Начальное количество травы
-  predatorSpeed: 2,       // Скорость хищников
-  preySpeed: 1.5,           // Скорость жертв
-  preyReproductionThreshold: 8,     // Сколько трав нужно жертве для размножения
-  predatorReproductionThreshold: 3, // Сколько жертв нужно хищнику для размножения
-  worldWidth: 2500,         // Ширина мира
-  worldHeight: 2000,        // Высота мира
-  preyVisionRadius: 200,    // Радиус зрения жертв
-  predatorVisionRadius: 190, // Радиус зрения хищников
-  poisonChance: 0.02,       // Шанс ядовитой травы
-  recoveryTimeSeconds: 60   // Время восстановления травы в секундах
+  predatorCount: 3,
+  preyCount: 20,
+  foodCount: 50,
+  bushCount: 10,
+  bushSafeRadius: 150,
+  predatorSpeed: 2,
+  preySpeed: 1.5,
+  preyReproductionThreshold: 8,
+  predatorReproductionThreshold: 3,
+  worldWidth: 2500,
+  worldHeight: 2000,
+  preyVisionRadius: 200,
+  predatorVisionRadius: 190,
+  poisonChance: 0.02,
+  recoveryTimeSeconds: 60
 };
 
 export default function App() {
-  // Состояния приложения
-  const [params, setParams] = useState(DEFAULT_PARAMS); // Параметры симуляции
-  const [predators, setPredators] = useState([]);       // Массив хищников
-  const [prey, setPrey] = useState([]);                 // Массив жертв
-  const [food, setFood] = useState([]);                 // Массив травы
-  const [stats, setStats] = useState({                  // Статистика
+  const [params, setParams] = useState(DEFAULT_PARAMS);
+  const [predators, setPredators] = useState([]);
+  const [prey, setPrey] = useState([]);
+  const [food, setFood] = useState([]);
+  const [bushes, setBushes] = useState([]);
+  const [stats, setStats] = useState({
     predators: 0,
     prey: 0,
+    hidingPrey: 0,
     food: 0,
     poisoned: 0
   });
-  const [showVision, setShowVision] = useState(false);  // Показывать радиус зрения
+  const [showVision, setShowVision] = useState(false);
 
-  // Инициализация симуляции
+  const initBushes = useCallback(() => {
+    const newBushes = [];
+    let attempts = 0;
+
+    while (newBushes.length < params.bushCount && attempts < params.bushCount * 2) {
+      const bush = new Bush(
+        Math.random() * params.worldWidth,
+        Math.random() * params.worldHeight,
+        params.worldWidth,
+        params.worldHeight
+      );
+      bush.safeRadius = params.bushSafeRadius;
+
+      const tooClose = newBushes.some(existingBush => {
+        const dx = bush.x - existingBush.x;
+        const dy = bush.y - existingBush.y;
+        return Math.sqrt(dx * dx + dy * dy) < bush.size * 2;
+      });
+
+      if (!tooClose) {
+        newBushes.push(bush);
+      }
+      attempts++;
+    }
+
+    setBushes(newBushes);
+  }, [params.bushCount, params.bushSafeRadius, params.worldWidth, params.worldHeight]);
+
+  const initFood = useCallback(() => {
+    const newFood = Array.from({ length: params.foodCount }, () => {
+      const foodItem = new Food(
+        Math.random() * params.worldWidth,
+        Math.random() * params.worldHeight,
+        params.poisonChance,
+        bushes,
+        params.worldWidth,
+        params.worldHeight
+      );
+      foodItem.maxRecoveryTime = params.recoveryTimeSeconds * 10;
+      return foodItem;
+    });
+    setFood(newFood);
+  }, [params.foodCount, params.poisonChance, params.recoveryTimeSeconds, bushes, params.worldWidth, params.worldHeight]);
+
   const initSimulation = useCallback(() => {
-    // Создание хищников
     const newPredators = Array.from({ length: params.predatorCount }, () => (
       new Predator(
         Math.random() * params.worldWidth,
@@ -52,7 +97,6 @@ export default function App() {
       )
     ));
 
-    // Создание жертв
     const newPrey = Array.from({ length: params.preyCount }, () => (
       new Prey(
         Math.random() * params.worldWidth,
@@ -65,42 +109,31 @@ export default function App() {
       )
     ));
 
-    // Создание травы
-    const newFood = Array.from({ length: params.foodCount }, () => {
-      const foodItem = new Food(
-        Math.random() * params.worldWidth,
-        Math.random() * params.worldHeight,
-        params.poisonChance
-      );
-      foodItem.maxRecoveryTime = params.recoveryTimeSeconds * 10; // Конвертация секунд в кадры
-      return foodItem;
-    });
+    initBushes();
+    initFood();
 
-    // Установка начальных состояний
     setPredators(newPredators);
     setPrey(newPrey);
-    setFood(newFood);
     setStats({
       predators: newPredators.length,
       prey: newPrey.length,
-      food: newFood.length,
+      hidingPrey: 0,
+      food: params.foodCount,
       poisoned: 0
     });
-  }, [params]);
+  }, [params, initBushes, initFood]);
 
-  // Эффект для перезапуска симуляции при изменении ключевых параметров
   useEffect(() => {
     initSimulation();
   }, [
     params.predatorCount,
     params.preyCount,
     params.foodCount,
+    params.bushCount,
     params.poisonChance
   ]);
 
-  // Эффект для обновления параметров в реальном времени
   useEffect(() => {
-    // Обновление параметров хищников
     setPredators(prev => prev.map(p => {
       p.speed = params.predatorSpeed;
       p.visionRadius = params.predatorVisionRadius;
@@ -108,7 +141,6 @@ export default function App() {
       return p;
     }));
 
-    // Обновление параметров жертв
     setPrey(prev => prev.map(p => {
       p.speed = params.preySpeed;
       p.visionRadius = params.preyVisionRadius;
@@ -116,7 +148,11 @@ export default function App() {
       return p;
     }));
 
-    // Обновление параметров травы
+    setBushes(prev => prev.map(b => {
+      b.safeRadius = params.bushSafeRadius;
+      return b;
+    }));
+
     setFood(prev => prev.map(f => {
       f.maxRecoveryTime = params.recoveryTimeSeconds * 10;
       return f;
@@ -128,32 +164,29 @@ export default function App() {
     params.preyVisionRadius,
     params.predatorReproductionThreshold,
     params.preyReproductionThreshold,
+    params.bushSafeRadius,
     params.recoveryTimeSeconds
   ]);
 
-  // Основной цикл симуляции
   useEffect(() => {
     const timer = setInterval(() => {
-      // Обновление состояния травы
       setFood(prev => {
         const updatedFood = [...prev];
-        updatedFood.forEach(f => f.update(1)); // Обновление восстановления
-        return updatedFood.filter(f => !f.isEaten || f.recoveryTime > 0); // Фильтрация съеденной травы
+        updatedFood.forEach(f => f.update(1));
+        return updatedFood.filter(f => !f.isEaten || f.recoveryTime > 0);
       });
 
-      // Обновление хищников
       setPredators(prevPredators => {
         const newPredators = [];
-        let preyToRemove = new Set(); // Индексы съеденных жертв
+        let preyToRemove = new Set();
 
         const updatedPredators = prevPredators.map(p => {
-          const result = p.update(prey, food);
-          if (result.offspring) newPredators.push(result.offspring); // Добавление потомства
-          if (result.eatenPreyIndex !== -1) preyToRemove.add(result.eatenPreyIndex); // Запись съеденных жертв
+          const result = p.update(prey, bushes);
+          if (result.offspring) newPredators.push(result.offspring);
+          if (result.eatenPreyIndex !== -1) preyToRemove.add(result.eatenPreyIndex);
           return result.updatedPredator;
-        }).filter(p => p !== null); // Фильтрация умерших хищников
+        }).filter(p => p !== null);
 
-        // Удаление съеденных жертв
         if (preyToRemove.size > 0) {
           setPrey(prev => prev.filter((_, index) => !preyToRemove.has(index)));
         }
@@ -161,36 +194,33 @@ export default function App() {
         return [...updatedPredators, ...newPredators];
       });
 
-      // Обновление жертв
       setPrey(prev => {
         const newPrey = [];
         const updatedPrey = prev.map(p => {
-          const result = p.update(food, predators);
-          if (result.offspring) newPrey.push(result.offspring); // Добавление потомства
+          const result = p.update(food, predators, bushes);
+          if (result.offspring) newPrey.push(result.offspring);
           return result.updatedPrey;
-        }).filter(p => p !== null); // Фильтрация умерших жертв
+        }).filter(p => p !== null);
         return [...updatedPrey, ...newPrey];
       });
 
-      // Обновление статистики
       setStats({
         predators: predators.length,
         prey: prey.length,
+        hidingPrey: bushes.filter(b => b.hidingPrey !== null).length,
         food: food.filter(f => !f.isEaten).length,
         poisoned: prey.filter(p => p.isPoisoned).length
       });
-    }, 100); // Интервал обновления - 100 мс
+    }, 100);
 
-    return () => clearInterval(timer); // Очистка таймера при размонтировании
-  }, [food, prey, predators]);
+    return () => clearInterval(timer);
+  }, [predators, prey, food, bushes]);
 
-  // Обработчик сброса симуляции
   const handleReset = () => {
     setParams(DEFAULT_PARAMS);
     initSimulation();
   };
 
-  // Рендер компонента
   return (
     <div className="app-container">
       <div className="simulation-area">
@@ -198,6 +228,7 @@ export default function App() {
           predators={predators}
           prey={prey}
           food={food}
+          bushes={bushes}
           width={params.worldWidth}
           height={params.worldHeight}
           showVision={showVision}
@@ -212,6 +243,7 @@ export default function App() {
           showVision={showVision}
           setShowVision={setShowVision}
           stats={stats}
+          bushes={bushes}
         />
       </div>
     </div>

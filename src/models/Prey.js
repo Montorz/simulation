@@ -7,20 +7,21 @@ export default class Prey {
     visionRadius, 
     isPoisoned = false
   ) {
-    this.x = x; // Позиция X
-    this.y = y; // Позиция Y
-    this.speed = speed; // Скорость движения
-    this.worldWidth = worldWidth; // Ширина мира
-    this.worldHeight = worldHeight; // Высота мира
-    this.direction = Math.random() * Math.PI * 2; // Направление движения (случайное)
-    this.foodEaten = 0; // Счетчик съеденной еды
-    this.reproductionThreshold = reproductionThreshold; // Сколько нужно съесть для размножения
-    this.visionRadius = visionRadius; // Как далеко видит еду и хищников
-    this.alive = true; // Жива ли добыча
-    this.isPoisoned = isPoisoned; // Отравлена ли добыча
+    this.x = x;
+    this.y = y;
+    this.speed = speed;
+    this.worldWidth = worldWidth;
+    this.worldHeight = worldHeight;
+    this.direction = Math.random() * Math.PI * 2;
+    this.foodEaten = 0;
+    this.reproductionThreshold = reproductionThreshold;
+    this.visionRadius = visionRadius;
+    this.alive = true;
+    this.isPoisoned = isPoisoned;
+    this.isHiding = false;
+    this.currentBush = null;
   }
 
-  // Находит первую видимую еду в списке
   getVisibleFood(foodList) {
     for (const food of foodList) {
       if (!food.isEaten && this.getDistance(food) < this.visionRadius) {
@@ -30,7 +31,6 @@ export default class Prey {
     return null;
   }
 
-  // Находит первого видимого хищника в списке
   getVisiblePredators(predatorList) {
     for (const predator of predatorList) {
       if (predator.alive && this.getDistance(predator) < this.visionRadius) {
@@ -40,86 +40,116 @@ export default class Prey {
     return null;
   }
 
-  // Убегает от хищника или идет к еде, или случайно меняет направление
-  move(targetFood, closestPredator) {
-    if (closestPredator) {
+  getNearestBush(bushList) {
+    for (const bush of bushList) {
+      if (!bush.hidingPrey && this.getDistance(bush) < this.visionRadius) {
+        return bush;
+      }
+    }
+    return null;
+  }
+
+  move(targetFood, closestPredator, nearestBush, bushList) {
+    if (this.isHiding) return;
+
+    if (closestPredator && nearestBush) {
+      // Бежим к кусту
+      this.direction = Math.atan2(nearestBush.y - this.y, nearestBush.x - this.x);
+      
+      // Если достигли куста - прячемся
+      if (this.getDistance(nearestBush) <= nearestBush.size) {
+        nearestBush.hidePrey(this);
+        this.isHiding = true;
+        this.currentBush = nearestBush;
+      }
+    } else if (closestPredator) {
       // Убегаем от хищника
       this.direction = Math.atan2(this.y - closestPredator.y, this.x - closestPredator.x);
     } else if (targetFood) {
       // Идем к еде
       this.direction = Math.atan2(targetFood.y - this.y, targetFood.x - this.x);
     } else if (Math.random() < 0.05) {
-      // Случайное направление (5% шанс изменить)
+      // Случайное направление
       this.direction = Math.random() * Math.PI * 2;
     }
 
     this.updatePosition();
   }
 
-  // Пытается съесть ближайшую еду
   eat(foodList) {
-    const food = this.getVisibleFood(foodList);
-    if (!food || this.getDistance(food) >= 10) return false; // Слишком далеко
+    if (this.isHiding) return false;
 
-    if (!food.eat()) return false; // Не смогли съесть
+    const food = this.getVisibleFood(foodList);
+    if (!food || this.getDistance(food) >= 10) return false;
+
+    if (!food.eat()) return false;
     
     this.foodEaten++;
     if (food.isPoisonous) {
-      this.isPoisoned = true; // Отравляемся, если еда ядовитая
+      this.isPoisoned = true;
     }
     
     return true;
   }
 
-  // Пытается размножиться, если съел достаточно еды и не отравлен
   tryReproduce() {
-    if (this.isPoisoned || this.foodEaten < this.reproductionThreshold) return null;
+    if (this.isPoisoned || this.foodEaten < this.reproductionThreshold || this.isHiding) {
+      return null;
+    }
     
-    this.foodEaten = 0; // Сбрасываем счетчик
-    return this.createOffspring(); // Создаем потомка
+    this.foodEaten = 0;
+    return this.createOffspring();
   }
 
-  // Основной метод обновления состояния
-  update(foodList, predatorList) {
+  update(foodList, predatorList, bushList) {
     if (!this.alive) return { updatedPrey: null, offspring: null };
     
-    // Находим ближайшие еду и хищника
+    // Если прячется в кусте
+    if (this.isHiding && this.currentBush) {
+      // Проверяем, можно ли выйти
+      if (!this.currentBush.isPredatorNear(predatorList)) {
+        this.isHiding = false;
+        // Выходим из куста с небольшим смещением
+        const angle = Math.random() * Math.PI * 2;
+        this.x = this.currentBush.x + Math.cos(angle) * (this.currentBush.size + 5);
+        this.y = this.currentBush.y + Math.sin(angle) * (this.currentBush.size + 5);
+        this.currentBush.releasePrey();
+        this.currentBush = null;
+      }
+      return { updatedPrey: this, offspring: null };
+    }
+
+    // Обычное поведение
     const targetFood = this.getVisibleFood(foodList);
     const closestPredator = this.getVisiblePredators(predatorList);
-    
-    // Двигаемся, едим, пытаемся размножиться
-    this.move(targetFood, closestPredator);
+    const nearestBush = this.getNearestBush(bushList);
+
+    this.move(targetFood, closestPredator, nearestBush, bushList);
     this.eat(foodList);
     const offspring = this.tryReproduce();
 
-    return {
-      updatedPrey: this,
-      offspring
-    };
+    return { updatedPrey: this, offspring };
   }
 
-  // Вспомогательные методы
   getDistance(target) {
     return Math.sqrt((this.x - target.x) ** 2 + (this.y - target.y) ** 2);
   }
 
-  // Обновляет позицию с учетом границ мира
   updatePosition() {
     this.x = Math.max(5, Math.min(this.worldWidth - 5, this.x + Math.cos(this.direction) * this.speed));
     this.y = Math.max(5, Math.min(this.worldHeight - 5, this.y + Math.sin(this.direction) * this.speed));
   }
 
-  // Создает потомка рядом с текущей позицией
   createOffspring() {
     return new Prey(
-      this.x + (Math.random() * 30 - 15), // Случайное смещение по X
-      this.y + (Math.random() * 30 - 15), // Случайное смещение по Y
+      this.x + (Math.random() * 30 - 15),
+      this.y + (Math.random() * 30 - 15),
       this.speed,
       this.worldWidth,
       this.worldHeight,
       this.reproductionThreshold,
       this.visionRadius,
-      false // Потомок не наследует отравление
+      false
     );
   }
 }
