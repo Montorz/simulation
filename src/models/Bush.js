@@ -15,23 +15,6 @@ export default class Bush {
     return Math.sqrt((this.x - target.x) ** 2 + (this.y - target.y) ** 2);
   }
 
-  // Проверяем содержит ли куст точку
-  contains(x, y) {
-    return this.getDistance({ x, y }) <= this.size;
-  }
-
-  // Проверяем находится ли точка в радиусе безопасности
-  isInSafeRadius(x, y) {
-    const effectiveRadius = Math.min(
-      this.safeRadius,
-      this.x - this.size,
-      this.worldWidth - this.x - this.size,
-      this.y - this.size,
-      this.worldHeight - this.y - this.size
-    );
-    return this.getDistance({ x, y }) <= effectiveRadius;
-  }
-
   // Прячем жертву в кусте
   hidePrey(prey) {
     if (!this.hidingPrey) {
